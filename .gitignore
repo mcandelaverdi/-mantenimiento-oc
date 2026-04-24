@@ -6,3 +6,5 @@ backend/*.db-shm
 backend/*.db-wal
 frontend/dist/
 .env
+.env.local
+.vercel
