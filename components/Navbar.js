@@ -4,9 +4,7 @@ import { useAuth } from './AuthProvider';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-
   if (!user) return null;
-
   return (
     <nav className="navbar no-print">
       <span className="navbar-brand">🏨 Órdenes de Compra</span>
@@ -14,6 +12,7 @@ export default function Navbar() {
         <Link href="/ordenes">Órdenes</Link>
         {user.rol === 'encargado' && <Link href="/ordenes/nueva">Nueva Orden</Link>}
         {user.rol === 'gerente' && <Link href="/usuarios">Usuarios</Link>}
+        {user.rol === 'gerente' && <Link href="/proveedores">Proveedores</Link>}
         <span className="navbar-user">{user.nombre} ({user.rol})</span>
         <button className="btn btn-outline" style={{ color:'white', borderColor:'rgba(255,255,255,0.5)', padding:'4px 12px', fontSize:'0.82rem' }} onClick={logout}>
           Salir
