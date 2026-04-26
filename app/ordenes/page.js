@@ -17,7 +17,7 @@ export default function OrdenesPage() {
   const router = useRouter();
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ hotel: '', proveedor: '', estado: '' });
+  const [filters, setFilters] = useState({ hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' });
 
   const fetchOrdenes = useCallback(async () => {
     setLoading(true);
@@ -29,9 +29,15 @@ export default function OrdenesPage() {
     const data = await res.json();
     setOrdenes(Array.isArray(data) ? data : []);
     setLoading(false);
-  }, [filters]);
+  }, [filters.hotel, filters.proveedor, filters.estado]);
 
   useEffect(() => { fetchOrdenes(); }, [fetchOrdenes]);
+
+  const ordenesFiltradas = ordenes.filter(o => {
+    if (filters.producto && !(o.items || []).some(it => it.producto_nombre?.toLowerCase().includes(filters.producto.toLowerCase()))) return false;
+    if (filters.habitacion && !(o.items || []).some(it => it.habitacion?.toLowerCase().includes(filters.habitacion.toLowerCase()))) return false;
+    return true;
+  });
 
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar esta orden?')) return;
@@ -87,6 +93,9 @@ export default function OrdenesPage() {
     rechazada: ordenes.filter(o => o.estado === 'RECHAZADA').length,
   };
 
+  const limpiarFiltros = () => setFilters({ hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' });
+  const hayFiltros = Object.values(filters).some(v => v !== '');
+
   return (
     <div className="container">
       <div className="page-header">
@@ -123,12 +132,26 @@ export default function OrdenesPage() {
               {ESTADOS.map(e => <option key={e}>{e}</option>)}
             </select>
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => setFilters({ hotel:'', proveedor:'', estado:'' })}>Limpiar</button>
+          <div className="form-group">
+            <label className="form-label">Producto</label>
+            <input type="text" className="form-control" placeholder="Buscar producto..." value={filters.producto} onChange={e => setFilters(f => ({...f, producto: e.target.value}))} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Habitación / Sector</label>
+            <input type="text" className="form-control" placeholder="Buscar habitación..." value={filters.habitacion} onChange={e => setFilters(f => ({...f, habitacion: e.target.value}))} />
+          </div>
+          {hayFiltros && <button className="btn btn-secondary btn-sm" onClick={limpiarFiltros}>Limpiar</button>}
         </div>
+
+        {hayFiltros && (
+          <p style={{ fontSize: 13, color: '#777', marginBottom: 12 }}>
+            Mostrando <strong>{ordenesFiltradas.length}</strong> de {ordenes.length} órdenes
+          </p>
+        )}
 
         {loading ? (
           <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>Cargando...</p>
-        ) : ordenes.length === 0 ? (
+        ) : ordenesFiltradas.length === 0 ? (
           <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>No hay órdenes</p>
         ) : (
           <div className="table-wrapper">
@@ -145,7 +168,7 @@ export default function OrdenesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ordenes.map(o => (
+                {ordenesFiltradas.map(o => (
                   <tr key={o.id}>
                     <td>{o.id}</td>
                     <td>{o.hotel}</td>
