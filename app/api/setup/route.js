@@ -16,7 +16,6 @@ export async function GET(request) {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
-
     await query(`
       CREATE TABLE IF NOT EXISTS ordenes (
         id SERIAL PRIMARY KEY,
@@ -32,7 +31,6 @@ export async function GET(request) {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
-
     await query(`
       CREATE TABLE IF NOT EXISTS orden_items (
         id SERIAL PRIMARY KEY,
@@ -43,17 +41,20 @@ export async function GET(request) {
         motivo TEXT
       )
     `);
-
+    await query(`
+      CREATE TABLE IF NOT EXISTS proveedores (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
     const { searchParams } = new URL(request.url);
     const reset = searchParams.get('reset') === '1';
-
     const existing = await query(`SELECT id FROM usuarios WHERE usuario = 'gerente'`);
-
     if (existing.length === 0 || reset) {
       const gerenteHash = await bcrypt.hash('gerente123', 10);
       const enc1Hash = await bcrypt.hash('encargado123', 10);
       const enc2Hash = await bcrypt.hash('encargado123', 10);
-
       if (reset && existing.length > 0) {
         await query(`UPDATE usuarios SET password_hash = $1 WHERE usuario = 'gerente'`, [gerenteHash]);
         await query(`UPDATE usuarios SET password_hash = $1 WHERE usuario = 'encargado1'`, [enc1Hash]);
@@ -73,9 +74,7 @@ export async function GET(request) {
         );
       }
     }
-
     const users = await query(`SELECT id, nombre, usuario, rol, hotel, activo FROM usuarios ORDER BY id`);
-
     return NextResponse.json({
       ok: true,
       message: 'Base de datos lista',
