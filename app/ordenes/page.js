@@ -18,6 +18,13 @@ export default function OrdenesPage() {
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' });
+  const [opciones, setOpciones] = useState({ proveedores: [], productos: [], habitaciones: [] });
+
+  useEffect(() => {
+    fetch('/api/ordenes/opciones').then(r => r.json()).then(data => {
+      if (data && !data.error) setOpciones(data);
+    });
+  }, []);
 
   const fetchOrdenes = useCallback(async () => {
     setLoading(true);
@@ -119,7 +126,10 @@ export default function OrdenesPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Proveedor</label>
-            <input type="text" className="form-control" placeholder="Buscar..." value={filters.proveedor} onChange={e => setFilters(f => ({...f, proveedor: e.target.value}))} />
+            <select className="form-control" value={filters.proveedor} onChange={e => setFilters(f => ({...f, proveedor: e.target.value}))}>
+              <option value="">Todos</option>
+              {opciones.proveedores.map(p => <option key={p}>{p}</option>)}
+            </select>
           </div>
           <div className="form-group">
             <label className="form-label">Estado</label>
@@ -130,11 +140,17 @@ export default function OrdenesPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Producto</label>
-            <input type="text" className="form-control" placeholder="Buscar producto..." value={filters.producto} onChange={e => setFilters(f => ({...f, producto: e.target.value}))} />
+            <select className="form-control" value={filters.producto} onChange={e => setFilters(f => ({...f, producto: e.target.value}))}>
+              <option value="">Todos</option>
+              {opciones.productos.map(p => <option key={p}>{p}</option>)}
+            </select>
           </div>
           <div className="form-group">
             <label className="form-label">Habitación / Sector</label>
-            <input type="text" className="form-control" placeholder="Buscar habitación..." value={filters.habitacion} onChange={e => setFilters(f => ({...f, habitacion: e.target.value}))} />
+            <select className="form-control" value={filters.habitacion} onChange={e => setFilters(f => ({...f, habitacion: e.target.value}))}>
+              <option value="">Todos</option>
+              {opciones.habitaciones.map(h => <option key={h}>{h}</option>)}
+            </select>
           </div>
           {hayFiltros && <button className="btn btn-secondary btn-sm" onClick={limpiarFiltros}>Limpiar</button>}
         </div>
