@@ -25,19 +25,15 @@ export default function OrdenesPage() {
     if (filters.hotel) params.set('hotel', filters.hotel);
     if (filters.proveedor) params.set('proveedor', filters.proveedor);
     if (filters.estado) params.set('estado', filters.estado);
+    if (filters.habitacion) params.set('habitacion', filters.habitacion);
+    if (filters.producto) params.set('producto', filters.producto);
     const res = await fetch(`/api/ordenes?${params}`);
     const data = await res.json();
     setOrdenes(Array.isArray(data) ? data : []);
     setLoading(false);
-  }, [filters.hotel, filters.proveedor, filters.estado]);
+  }, [filters.hotel, filters.proveedor, filters.estado, filters.habitacion, filters.producto]);
 
   useEffect(() => { fetchOrdenes(); }, [fetchOrdenes]);
-
-  const ordenesFiltradas = ordenes.filter(o => {
-    if (filters.producto && !(o.items || []).some(it => it.producto_nombre?.toLowerCase().includes(filters.producto.toLowerCase()))) return false;
-    if (filters.habitacion && !(o.items || []).some(it => it.habitacion?.toLowerCase().includes(filters.habitacion.toLowerCase()))) return false;
-    return true;
-  });
 
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar esta orden?')) return;
@@ -145,13 +141,13 @@ export default function OrdenesPage() {
 
         {hayFiltros && (
           <p style={{ fontSize: 13, color: '#777', marginBottom: 12 }}>
-            Mostrando <strong>{ordenesFiltradas.length}</strong> de {ordenes.length} órdenes
+            Mostrando <strong>{ordenes.length}</strong> órdenes
           </p>
         )}
 
         {loading ? (
           <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>Cargando...</p>
-        ) : ordenesFiltradas.length === 0 ? (
+        ) : ordenes.length === 0 ? (
           <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>No hay órdenes</p>
         ) : (
           <div className="table-wrapper">
@@ -168,7 +164,7 @@ export default function OrdenesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ordenesFiltradas.map(o => (
+                {ordenes.map(o => (
                   <tr key={o.id}>
                     <td>{o.id}</td>
                     <td>{o.hotel}</td>
