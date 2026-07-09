@@ -19,4 +19,6 @@ export default function NuevaOrdenPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [hotel, setHotel] = useState(user?.hotel || '');
-  const
+  const [proveedor, setProveedor] = useState('');
+  const [firmaEncargado, setFirmaEncargado] = useState(user?.nombre || '');
+  const [nroOrden, setNroOrden] = useState('');
