@@ -16,12 +16,13 @@ export async function GET(request) {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
     await query(`
       CREATE TABLE IF NOT EXISTS ordenes (
         id SERIAL PRIMARY KEY,
         hotel VARCHAR(50) NOT NULL,
         proveedor VARCHAR(100) NOT NULL,
-        estado VARCHAR(20) DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'APROBADA', 'RECHAZADA')),
+        estado VARCHAR(50) DEFAULT 'PENDIENTE',
         firma_encargado VARCHAR(100),
         firma_gerente VARCHAR(100),
         notas_gerente TEXT,
@@ -31,6 +32,9 @@ export async function GET(request) {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    await query(`ALTER TABLE ordenes DROP CONSTRAINT IF EXISTS ordenes_estado_check`);
+
     await query(`
       CREATE TABLE IF NOT EXISTS orden_items (
         id SERIAL PRIMARY KEY,
@@ -41,6 +45,7 @@ export async function GET(request) {
         motivo TEXT
       )
     `);
+
     await query(`
       CREATE TABLE IF NOT EXISTS proveedores (
         id SERIAL PRIMARY KEY,
@@ -48,6 +53,7 @@ export async function GET(request) {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
     const { searchParams } = new URL(request.url);
     const reset = searchParams.get('reset') === '1';
     const existing = await query(`SELECT id FROM usuarios WHERE usuario = 'gerente'`);
@@ -74,16 +80,12 @@ export async function GET(request) {
         );
       }
     }
+
     const users = await query(`SELECT id, nombre, usuario, rol, hotel, activo FROM usuarios ORDER BY id`);
     return NextResponse.json({
       ok: true,
       message: 'Base de datos lista',
-      usuarios: users,
-      credenciales_por_defecto: [
-        { usuario: 'gerente', password: 'gerente123', rol: 'gerente' },
-        { usuario: 'encargado1', password: 'encargado123', rol: 'encargado', hotel: 'VALLES' },
-        { usuario: 'encargado2', password: 'encargado123', rol: 'encargado', hotel: 'PRINCE' },
-      ]
+      usuarios: users
     });
   } catch (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
