@@ -4,7 +4,11 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter, useParams } from 'next/navigation';
 
 function estadoBadge(estado) {
-  const cls = { PENDIENTE: 'badge-pendiente', APROBADA: 'badge-aprobada', RECHAZADA: 'badge-rechazada' };
+  const cls = { 
+    PENDIENTE: 'badge-pendiente', 
+    APROBADA: 'badge-aprobada', 
+    'RECHAZADA POR FALTA DE PRODUCTO': 'badge-rechazada' 
+  };
   return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
 }
 
@@ -174,8 +178,8 @@ export default function OrdenDetailPage() {
             <button className="btn btn-success" onClick={() => handleDecision('APROBADA')} disabled={saving}>
               ✓ Aprobar
             </button>
-            <button className="btn btn-danger" onClick={() => handleDecision('RECHAZADA')} disabled={saving}>
-              ✗ Rechazar
+            <button className="btn btn-danger" onClick={() => handleDecision('RECHAZADA POR FALTA DE PRODUCTO')} disabled={saving}>
+              ✗ Rechazar por falta de producto
             </button>
           </div>
         </div>
