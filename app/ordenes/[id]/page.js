@@ -44,33 +44,4 @@ export default function OrdenDetailPage() {
     setSaving(true);
     setError('');
     const res = await fetch(`/api/ordenes/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado, firma_gerente: firmaGerente, notas_gerente: notasGerente }),
-    });
-    if (res.ok) {
-      setOrden(prev => ({ ...prev, estado, firma_gerente: firmaGerente, notas_gerente: notasGerente }));
-    } else {
-      const d = await res.json();
-      setError(d.error || 'Error');
-    }
-    setSaving(false);
-  };
-
-  const handlePrint = () => {
-    const items = orden.items || [];
-    const win = window.open('', '_blank');
-    win.document.write(`
-      <html><head><title>Orden #${nroOrden || orden.id}</title>
-      <style>
-        body{font-family:Arial,sans-serif;padding:20px;font-size:13px}
-        h2{color:#1a237e;margin-bottom:4px}
-        table{width:100%;border-collapse:collapse;margin-top:12px}
-        th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}
-        th{background:#e8eaf6}
-        .info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-        .info-item{font-size:12px} .info-item strong{display:block;color:#555}
-        .firma{margin-top:20px;display:flex;gap:40px}
-        .firma-box{flex:1;border-top:1px solid #333;padding-top:6px;font-size:12px}
-      </style></head><body>
-      <h2>Orden de Compra ${nroOrden ? '#' + nroOrden : '#' + orden.id}</h2>
+      method:
