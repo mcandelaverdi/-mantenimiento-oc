@@ -26,6 +26,7 @@ export async function GET(request) {
         firma_encargado VARCHAR(100),
         firma_gerente VARCHAR(100),
         notas_gerente TEXT,
+        nro_orden VARCHAR(50),
         encargado_id INTEGER REFERENCES usuarios(id),
         gerente_id INTEGER REFERENCES usuarios(id),
         created_at TIMESTAMP DEFAULT NOW(),
@@ -34,6 +35,7 @@ export async function GET(request) {
     `);
 
     await query(`ALTER TABLE ordenes DROP CONSTRAINT IF EXISTS ordenes_estado_check`);
+    await query(`ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS nro_orden VARCHAR(50)`);
 
     await query(`
       CREATE TABLE IF NOT EXISTS orden_items (
@@ -82,11 +84,7 @@ export async function GET(request) {
     }
 
     const users = await query(`SELECT id, nombre, usuario, rol, hotel, activo FROM usuarios ORDER BY id`);
-    return NextResponse.json({
-      ok: true,
-      message: 'Base de datos lista',
-      usuarios: users
-    });
+    return NextResponse.json({ ok: true, message: 'Base de datos lista', usuarios: users });
   } catch (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
