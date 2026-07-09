@@ -1,51 +1,70 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { getUser } from '@/lib/auth';
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/components/AuthProvider';
+import { useRouter, useParams } from 'next/navigation';
 
-export async function GET(request, { params }) {
-  const user = await getUser();
-  if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  const { id } = params;
-  const rows = await query(`
-    SELECT o.*, u.nombre AS encargado_nombre
-    FROM ordenes o
-    LEFT JOIN usuarios u ON u.id = o.encargado_id
-    WHERE o.id = $1
-  `, [id]);
-  if (!rows.length) return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
-  const orden = rows[0];
-  if (user.rol === 'encargado' && orden.encargado_id !== user.id) {
-    return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
-  }
-  const items = await query(
-    `SELECT * FROM orden_items WHERE orden_id = $1 ORDER BY id`,
-    [id]
-  );
-  return NextResponse.json({ ...orden, items });
+function estadoBadge(estado) {
+  const cls = {
+    PENDIENTE: 'badge-pendiente',
+    APROBADA: 'badge-aprobada',
+    'RECHAZADA POR FALTA DE PRODUCTO': 'badge-rechazada'
+  };
+  return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
 }
 
-export async function PATCH(request, { params }) {
-  const user = await getUser();
-  if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  if (user.rol !== 'gerente') return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
-  const { id } = params;
-  const { estado, firma_gerente, notas_gerente } = await request.json();
-  if (!['APROBADA', 'RECHAZADA POR FALTA DE PRODUCTO'].includes(estado)) {
-    return NextResponse.json({ error: 'Estado inválido' }, { status: 400 });
-  }
-  await query(
-    `UPDATE ordenes SET estado = $1, firma_gerente = $2, notas_gerente = $3, gerente_id = $4, updated_at = NOW()
-     WHERE id = $5`,
-    [estado, firma_gerente || '', notas_gerente || '', user.id, id]
-  );
-  return NextResponse.json({ ok: true });
-}
+export default function OrdenDetailPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id;
+  const [orden, setOrden] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [firmaGerente, setFirmaGerente] = useState('');
+  const [notasGerente, setNotasGerente] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [nroOrden, setNroOrden] = useState('');
 
-export async function DELETE(request, { params }) {
-  const user = await getUser();
-  if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  if (user.rol !== 'gerente') return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
-  const { id } = params;
-  await query(`DELETE FROM ordenes WHERE id = $1`, [id]);
-  return NextResponse.json({ ok: true });
-}
+  const fetchOrden = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/ordenes/${id}`);
+      const data = await res.json();
+      setOrden(data);
+      setFirmaGerente(data.firma_gerente || '');
+      setNotasGerente(data.notas_gerente || '');
+      setNroOrden(data.nro_orden || '');
+    } catch (e) {
+      setError('Error al cargar la orden');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => { fetchOrden(); }, [fetchOrden]);
+
+  const handleDecision = async (estado) => {
+    if (!firmaGerente.trim()) { setError('Debe ingresar su firma'); return; }
+    setSaving(true);
+    setError('');
+    const res = await fetch(`/api/ordenes/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado, firma_gerente: firmaGerente, notas_gerente: notasGerente }),
+    });
+    if (res.ok) {
+      await fetchOrden();
+    } else {
+      const d = await res.json();
+      setError(d.error || 'Error');
+    }
+    setSaving(false);
+  };
+
+  const handlePrint = () => {
+    const items = orden.items || [];
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><title>Orden</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:20px;font-size:13px}
+        h2{color:#1a237e;margin-bottom:4px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
