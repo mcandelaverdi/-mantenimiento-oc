@@ -30,7 +30,7 @@ export async function PATCH(request, { params }) {
   if (user.rol !== 'gerente') return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
   const { id } = params;
   const { estado, firma_gerente, notas_gerente } = await request.json();
-  if (!['APROBADA', 'RECHAZADA POR FALTA DE PRODUCTO'].includes(estado)) {
+  if (!['APROBADA', 'RECHAZADA POR FALTA DE PRODUCTO', 'PAGADA'].includes(estado)) {
     return NextResponse.json({ error: 'Estado invalido' }, { status: 400 });
   }
   await query(
