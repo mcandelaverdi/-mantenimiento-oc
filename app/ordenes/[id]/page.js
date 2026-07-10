@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter, useParams } from 'next/navigation';
 
@@ -7,6 +7,7 @@ function estadoBadge(estado) {
   const cls = {
     PENDIENTE: 'badge-pendiente',
     APROBADA: 'badge-aprobada',
+    PAGADA: 'badge-pagada',
     'RECHAZADA POR FALTA DE PRODUCTO': 'badge-rechazada'
   };
   return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
@@ -25,21 +26,25 @@ export default function OrdenDetailPage() {
   const [saving, setSaving] = useState(false);
   const [nroOrden, setNroOrden] = useState('');
 
-  useEffect(() => {
-    fetch(`/api/ordenes/${id}`)
-      .then(r => r.json())
-      .then(data => {
-        setOrden(data);
-        setFirmaGerente(data.firma_gerente || '');
-        setNotasGerente(data.notas_gerente || '');
-        setNroOrden(data.nro_orden || '');
-        setLoading(false);
-      })
-      .catch(() => { setError('Error al cargar la orden'); setLoading(false); });
+  const fetchOrden = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/ordenes/${id}`);
+      const data = await res.json();
+      setOrden(data);
+      setFirmaGerente(data.firma_gerente || '');
+      setNotasGerente(data.notas_gerente || '');
+      setNroOrden(data.nro_orden || '');
+    } catch (e) {
+      setError('Error al cargar la orden');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
+  useEffect(() => { fetchOrden(); }, [fetchOrden]);
+
   const handleDecision = async (estado) => {
-    if (!firmaGerente.trim()) { setError('Debe ingresar su firma'); return; }
+    if (estado !== 'PAGADA' && !firmaGerente.trim()) { setError('Debe ingresar su firma'); return; }
     setSaving(true);
     setError('');
     const res = await fetch(`/api/ordenes/${id}`, {
@@ -48,7 +53,7 @@ export default function OrdenDetailPage() {
       body: JSON.stringify({ estado, firma_gerente: firmaGerente, notas_gerente: notasGerente }),
     });
     if (res.ok) {
-      setOrden(prev => ({ ...prev, estado, firma_gerente: firmaGerente, notas_gerente: notasGerente }));
+      await fetchOrden();
     } else {
       const d = await res.json();
       setError(d.error || 'Error');
@@ -81,7 +86,7 @@ export default function OrdenDetailPage() {
       </div>
       <table>
         <thead><tr><th>#</th><th>Producto</th><th>Cantidad</th><th>Habitacion</th><th>Motivo</th></tr></thead>
-        <tbody>${items.map((it, i) => `<tr><td>${i+1}</td><td>${it.producto_nombre}</td><td>${it.cantidad}</td><td>${it.habitacion||''}</td><td>${it.motivo||''}</td></tr>`).join('')}</tbody>
+        <tbody>${items.map((it, i) => '<tr><td>' + (i+1) + '</td><td>' + it.producto_nombre + '</td><td>' + it.cantidad + '</td><td>' + (it.habitacion||'') + '</td><td>' + (it.motivo||'') + '</td></tr>').join('')}</tbody>
       </table>
       <div class="firma">
         <div class="firma-box">Firma Encargado<br/><em>${orden.firma_encargado || ''}</em></div>
@@ -96,7 +101,7 @@ export default function OrdenDetailPage() {
   if (loading) return <div className="container" style={{ padding:40, textAlign:'center', color:'#777' }}>Cargando...</div>;
   if (!orden || orden.error) return <div className="container"><div className="alert alert-error">{orden?.error || 'Orden no encontrada'}</div></div>;
 
-  const canPrint = user?.rol === 'gerente' || orden.estado === 'APROBADA';
+  const canPrint = user?.rol === 'gerente' || orden.estado === 'APROBADA' || orden.estado === 'PAGADA';
   const canDecide = user?.rol === 'gerente' && (orden.estado === 'PENDIENTE' || orden.estado === 'APROBADA');
 
   return (
@@ -159,31 +164,40 @@ export default function OrdenDetailPage() {
       {canDecide && (
         <div className="card no-print">
           <h2>Decision del Gerente</h2>
-          <div className="form-group">
-            <label className="form-label">Firma Gerente *</label>
-            <input
-              type="text"
-              className="form-control"
-              value={firmaGerente}
-              onChange={e => setFirmaGerente(e.target.value)}
-              placeholder="Escriba su nombre completo"
-              style={{ fontStyle:'italic', fontFamily:'Georgia, serif', fontSize:'1rem' }}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Notas (opcional)</label>
-            <textarea
-              className="form-control"
-              value={notasGerente}
-              onChange={e => setNotasGerente(e.target.value)}
-              rows={3}
-              placeholder="Observaciones..."
-            />
-          </div>
+          {orden.estado === 'PENDIENTE' && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Firma Gerente *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={firmaGerente}
+                  onChange={e => setFirmaGerente(e.target.value)}
+                  placeholder="Escriba su nombre completo"
+                  style={{ fontStyle:'italic', fontFamily:'Georgia, serif', fontSize:'1rem' }}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notas (opcional)</label>
+                <textarea
+                  className="form-control"
+                  value={notasGerente}
+                  onChange={e => setNotasGerente(e.target.value)}
+                  rows={3}
+                  placeholder="Observaciones..."
+                />
+              </div>
+            </>
+          )}
           <div className="actions-bar">
-            {orden.estado !== 'APROBADA' && (
+            {orden.estado === 'PENDIENTE' && (
               <button className="btn btn-success" onClick={() => handleDecision('APROBADA')} disabled={saving}>
                 Aprobar
+              </button>
+            )}
+            {orden.estado === 'APROBADA' && (
+              <button className="btn btn-primary" onClick={() => handleDecision('PAGADA')} disabled={saving}>
+                Marcar como Pagada
               </button>
             )}
             <button className="btn btn-danger" onClick={() => handleDecision('RECHAZADA POR FALTA DE PRODUCTO')} disabled={saving}>
