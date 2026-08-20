@@ -145,6 +145,7 @@ tbody tr:hover { background: #fafafa; }
 .badge-pendiente { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
 .badge-aprobada { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
 .badge-pagada { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+.badge-sin-factura { background: #fff8e1; color: #f57c00; border: 1px solid #ffe082; }
 .badge-rechazada { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
 
 .stats-grid {
