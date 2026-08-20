@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getUser } from '@/lib/auth';
+import { query } from '@/lib/db';
 
 export async function GET() {
-  const user = await getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  try {
+    await query(`UPDATE ordenes SET proveedor = 'IACONO' WHERE proveedor = 'IACONO PINTURERIAS'`);
+    return NextResponse.json({ ok: true, message: 'Proveedor actualizado correctamente' });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
-  return NextResponse.json(user);
 }
