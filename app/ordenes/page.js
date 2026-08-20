@@ -5,10 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const HOTELES = ['VALLES', 'PRINCE', 'AMERICA', 'VIPS', 'KING'];
-const ESTADOS = ['PENDIENTE', 'APROBADA', 'RECHAZADA'];
+const ESTADOS = ['PENDIENTE', 'APROBADA', 'PAGADA', 'APROBADA SIN FACTURA', 'RECHAZADA POR FALTA DE PRODUCTO'];
 
 function estadoBadge(estado) {
-  const cls = { PENDIENTE: 'badge-pendiente', APROBADA: 'badge-aprobada', RECHAZADA: 'badge-rechazada' };
+  const cls = {
+    PENDIENTE: 'badge-pendiente',
+    APROBADA: 'badge-aprobada',
+    PAGADA: 'badge-pagada',
+    'APROBADA SIN FACTURA': 'badge-sin-factura',
+    'RECHAZADA POR FALTA DE PRODUCTO': 'badge-rechazada'
+  };
   return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
 }
 
@@ -75,14 +81,14 @@ export default function OrdenesPage() {
         <div class="info-item"><strong>Fecha</strong>${new Date(orden.created_at).toLocaleDateString('es-AR')}</div>
       </div>
       <table>
-        <thead><tr><th>#</th><th>Producto</th><th>Cantidad</th><th>Habitación</th><th>Motivo</th></tr></thead>
-        <tbody>${items.map((it,i) => `<tr><td>${i+1}</td><td>${it.producto_nombre}</td><td>${it.cantidad}</td><td>${it.habitacion||''}</td><td>${it.motivo||''}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>#</th><th>Producto</th><th>Cantidad</th><th>Habitacion</th><th>Motivo</th></tr></thead>
+        <tbody>${items.map((it,i) => '<tr><td>' + (i+1) + '</td><td>' + it.producto_nombre + '</td><td>' + it.cantidad + '</td><td>' + (it.habitacion||'') + '</td><td>' + (it.motivo||'') + '</td></tr>').join('')}</tbody>
       </table>
       <div class="firma">
         <div class="firma-box">Firma Encargado<br/><em>${orden.firma_encargado || ''}</em></div>
         <div class="firma-box">Firma Gerente<br/><em>${orden.firma_gerente || ''}</em></div>
       </div>
-      ${orden.notas_gerente ? `<p style="margin-top:12px;font-size:12px"><strong>Notas:</strong> ${orden.notas_gerente}</p>` : ''}
+      ${orden.notas_gerente ? '<p style="margin-top:12px;font-size:12px"><strong>Notas:</strong> ' + orden.notas_gerente + '</p>' : ''}
       </body></html>
     `);
     win.document.close();
@@ -93,7 +99,9 @@ export default function OrdenesPage() {
     total: ordenes.length,
     pendiente: ordenes.filter(o => o.estado === 'PENDIENTE').length,
     aprobada: ordenes.filter(o => o.estado === 'APROBADA').length,
-    rechazada: ordenes.filter(o => o.estado === 'RECHAZADA').length,
+    pagada: ordenes.filter(o => o.estado === 'PAGADA').length,
+    sinFactura: ordenes.filter(o => o.estado === 'APROBADA SIN FACTURA').length,
+    rechazada: ordenes.filter(o => o.estado === 'RECHAZADA POR FALTA DE PRODUCTO').length,
   };
 
   const limpiarFiltros = () => setFilters({ hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' });
@@ -102,7 +110,7 @@ export default function OrdenesPage() {
   return (
     <div className="container">
       <div className="page-header">
-        <h1>Órdenes de Compra</h1>
+        <h1>Ordenes de Compra</h1>
         {user?.rol === 'encargado' && (
           <Link href="/ordenes/nueva" className="btn btn-primary">+ Nueva Orden</Link>
         )}
@@ -112,6 +120,8 @@ export default function OrdenesPage() {
         <div className="stat-card stat-total"><div className="stat-number">{stats.total}</div><div className="stat-label">Total</div></div>
         <div className="stat-card stat-pendiente"><div className="stat-number">{stats.pendiente}</div><div className="stat-label">Pendientes</div></div>
         <div className="stat-card stat-aprobada"><div className="stat-number">{stats.aprobada}</div><div className="stat-label">Aprobadas</div></div>
+        <div className="stat-card stat-pagada"><div className="stat-number">{stats.pagada}</div><div className="stat-label">Pagadas</div></div>
+        <div className="stat-card stat-sin-factura"><div className="stat-number">{stats.sinFactura}</div><div className="stat-label">Sin Factura</div></div>
         <div className="stat-card stat-rechazada"><div className="stat-number">{stats.rechazada}</div><div className="stat-label">Rechazadas</div></div>
       </div>
 
@@ -146,7 +156,7 @@ export default function OrdenesPage() {
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">Habitación / Sector</label>
+            <label className="form-label">Habitacion / Sector</label>
             <select className="form-control" value={filters.habitacion} onChange={e => setFilters(f => ({...f, habitacion: e.target.value}))}>
               <option value="">Todos</option>
               {opciones.habitaciones.map(h => <option key={h}>{h}</option>)}
@@ -157,14 +167,14 @@ export default function OrdenesPage() {
 
         {hayFiltros && (
           <p style={{ fontSize: 13, color: '#777', marginBottom: 12 }}>
-            Mostrando <strong>{ordenes.length}</strong> órdenes
+            Mostrando <strong>{ordenes.length}</strong> ordenes
           </p>
         )}
 
         {loading ? (
           <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>Cargando...</p>
         ) : ordenes.length === 0 ? (
-          <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>No hay órdenes</p>
+          <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>No hay ordenes</p>
         ) : (
           <div className="table-wrapper">
             <table>
@@ -191,11 +201,11 @@ export default function OrdenesPage() {
                     <td>
                       <div className="actions-bar">
                         <button className="btn btn-outline btn-sm" onClick={() => router.push(`/ordenes/${o.id}`)}>Ver</button>
-                        {(user?.rol === 'gerente' || o.estado === 'APROBADA') && (
-                          <button className="btn btn-secondary btn-sm no-print" onClick={() => handlePrint(o)}>🖨️</button>
+                        {(user?.rol === 'gerente' || o.estado === 'APROBADA' || o.estado === 'PAGADA' || o.estado === 'APROBADA SIN FACTURA') && (
+                          <button className="btn btn-secondary btn-sm no-print" onClick={() => handlePrint(o)}>Print</button>
                         )}
                         {user?.rol === 'gerente' && (
-                          <button className="btn btn-danger btn-sm no-print" onClick={() => handleDelete(o.id)}>🗑️</button>
+                          <button className="btn btn-danger btn-sm no-print" onClick={() => handleDelete(o.id)}>Eliminar</button>
                         )}
                       </div>
                     </td>
