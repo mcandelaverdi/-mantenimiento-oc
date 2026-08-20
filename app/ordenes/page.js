@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 const HOTELES = ['VALLES', 'PRINCE', 'AMERICA', 'VIPS', 'KING'];
 const ESTADOS = ['PENDIENTE', 'APROBADA', 'PAGADA', 'APROBADA SIN FACTURA', 'RECHAZADA POR FALTA DE PRODUCTO'];
+const STORAGE_KEY = 'ordenes_filtros';
 
 function estadoBadge(estado) {
   const cls = {
@@ -18,12 +19,20 @@ function estadoBadge(estado) {
   return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
 }
 
+const filtrosInicio = () => {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return { hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' };
+};
+
 export default function OrdenesPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' });
+  const [filters, setFilters] = useState(filtrosInicio);
   const [opciones, setOpciones] = useState({ proveedores: [], productos: [], habitaciones: [] });
 
   useEffect(() => {
@@ -31,6 +40,10 @@ export default function OrdenesPage() {
       if (data && !data.error) setOpciones(data);
     });
   }, []);
+
+  useEffect(() => {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters)); } catch (e) {}
+  }, [filters]);
 
   const fetchOrdenes = useCallback(async () => {
     setLoading(true);
@@ -49,7 +62,7 @@ export default function OrdenesPage() {
   useEffect(() => { fetchOrdenes(); }, [fetchOrdenes]);
 
   const handleDelete = async (id) => {
-    if (!confirm('¿Eliminar esta orden?')) return;
+    if (!confirm('Eliminar esta orden?')) return;
     await fetch(`/api/ordenes/${id}`, { method: 'DELETE' });
     fetchOrdenes();
   };
