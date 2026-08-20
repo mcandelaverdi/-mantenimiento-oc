@@ -150,7 +150,7 @@ tbody tr:hover { background: #fafafa; }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -174,6 +174,8 @@ tbody tr:hover { background: #fafafa; }
 .stat-total .stat-number { color: #1a237e; }
 .stat-pendiente .stat-number { color: #e65100; }
 .stat-aprobada .stat-number { color: #2e7d32; }
+.stat-pagada .stat-number { color: #1565c0; }
+.stat-sin-factura .stat-number { color: #f57c00; }
 .stat-rechazada .stat-number { color: #c62828; }
 
 .filters-bar {
