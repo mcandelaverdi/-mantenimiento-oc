@@ -8,6 +8,7 @@ function estadoBadge(estado) {
     PENDIENTE: 'badge-pendiente',
     APROBADA: 'badge-aprobada',
     PAGADA: 'badge-pagada',
+    'APROBADA SIN FACTURA': 'badge-sin-factura',
     'RECHAZADA POR FALTA DE PRODUCTO': 'badge-rechazada'
   };
   return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
@@ -44,7 +45,10 @@ export default function OrdenDetailPage() {
   useEffect(() => { fetchOrden(); }, [fetchOrden]);
 
   const handleDecision = async (estado) => {
-    if (estado !== 'PAGADA' && !firmaGerente.trim()) { setError('Debe ingresar su firma'); return; }
+    if (estado !== 'PAGADA' && estado !== 'APROBADA SIN FACTURA' && !firmaGerente.trim()) {
+      setError('Debe ingresar su firma');
+      return;
+    }
     setSaving(true);
     setError('');
     const res = await fetch(`/api/ordenes/${id}`, {
@@ -101,8 +105,9 @@ export default function OrdenDetailPage() {
   if (loading) return <div className="container" style={{ padding:40, textAlign:'center', color:'#777' }}>Cargando...</div>;
   if (!orden || orden.error) return <div className="container"><div className="alert alert-error">{orden?.error || 'Orden no encontrada'}</div></div>;
 
-  const canPrint = user?.rol === 'gerente' || orden.estado === 'APROBADA' || orden.estado === 'PAGADA';
+  const canPrint = user?.rol === 'gerente' || orden.estado === 'APROBADA' || orden.estado === 'PAGADA' || orden.estado === 'APROBADA SIN FACTURA';
   const canDecide = user?.rol === 'gerente' && (orden.estado === 'PENDIENTE' || orden.estado === 'APROBADA');
+  const esGisela = user?.usuario === 'gisela';
 
   return (
     <div className="container">
@@ -198,6 +203,11 @@ export default function OrdenDetailPage() {
             {orden.estado === 'APROBADA' && (
               <button className="btn btn-primary" onClick={() => handleDecision('PAGADA')} disabled={saving}>
                 Marcar como Pagada
+              </button>
+            )}
+            {orden.estado === 'APROBADA' && esGisela && (
+              <button className="btn btn-warning" onClick={() => handleDecision('APROBADA SIN FACTURA')} disabled={saving}>
+                Aprobada sin Factura
               </button>
             )}
             <button className="btn btn-danger" onClick={() => handleDecision('RECHAZADA POR FALTA DE PRODUCTO')} disabled={saving}>
