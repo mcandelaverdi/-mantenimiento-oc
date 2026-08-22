@@ -12,7 +12,7 @@ export default function Navbar() {
         <Link href="/ordenes">Ordenes</Link>
         {user.rol === 'gerente' && <Link href="/usuarios">Usuarios</Link>}
         {user.rol === 'gerente' && <Link href="/proveedores">Proveedores</Link>}
-        {user.usuario === 'gisela' && <Link href="/informes">Informes</Link>}
+        {user.rol === 'gerente' && <Link href="/informes">Informes</Link>}
         <span className="navbar-user">{user.nombre} ({user.rol})</span>
         <button className="btn btn-outline" style={{ color:'white', borderColor:'rgba(255,255,255,0.5)', padding:'4px 12px', fontSize:'0.82rem' }} onClick={logout}>
           Salir
