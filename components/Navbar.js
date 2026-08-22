@@ -7,11 +7,12 @@ export default function Navbar() {
   if (!user) return null;
   return (
     <nav className="navbar no-print">
-      <span className="navbar-brand">🏨 Órdenes de Compra</span>
+      <span className="navbar-brand">🏨 Ordenes de Compra</span>
       <div className="navbar-links">
-        <Link href="/ordenes">Órdenes</Link>
+        <Link href="/ordenes">Ordenes</Link>
         {user.rol === 'gerente' && <Link href="/usuarios">Usuarios</Link>}
         {user.rol === 'gerente' && <Link href="/proveedores">Proveedores</Link>}
+        {user.usuario === 'gisela' && <Link href="/informes">Informes</Link>}
         <span className="navbar-user">{user.nombre} ({user.rol})</span>
         <button className="btn btn-outline" style={{ color:'white', borderColor:'rgba(255,255,255,0.5)', padding:'4px 12px', fontSize:'0.82rem' }} onClick={logout}>
           Salir
