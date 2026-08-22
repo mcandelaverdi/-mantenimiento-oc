@@ -13,7 +13,7 @@ const PRODUCTOS_SUGERIDOS = [
   'Silicona', 'Espuma expansiva', 'Cinta aisladora',
 ];
 
-const emptyItem = () => ({ producto_nombre: '', cantidad: '', habitacion: '', motivo: '' });
+const emptyItem = () => ({ producto_nombre: '', cantidad: '', habitacion: '', otro_sector: '', motivo: '' });
 
 export default function NuevaOrdenPage() {
   const { user } = useAuth();
@@ -53,7 +53,10 @@ export default function NuevaOrdenPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const validItems = items.filter(it => it.producto_nombre.trim());
+    const validItems = items.filter(it => it.producto_nombre.trim()).map(it => ({
+      ...it,
+      habitacion: it.habitacion + (it.otro_sector ? ' / ' + it.otro_sector : '')
+    }));
     if (!validItems.length) { setError('Debe ingresar al menos un producto'); return; }
     setLoading(true);
     try {
@@ -138,6 +141,7 @@ export default function NuevaOrdenPage() {
                   <th>Producto *</th>
                   <th>Cantidad</th>
                   <th>Habitacion</th>
+                  <th>Otro Sector</th>
                   <th>Motivo</th>
                   <th></th>
                 </tr>
@@ -165,18 +169,30 @@ export default function NuevaOrdenPage() {
                         inputMode="numeric"
                         className="form-control"
                         value={item.cantidad}
-                        onChange={e => updateItem(idx, 'cantidad', e.target.value)}
+                        onChange={e => updateItem(idx, 'cantidad', e.target.value.replace(/\D/g, ''))}
                         placeholder="0"
-                        style={{ width: 80 }}
+                        style={{ width: 70 }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className="form-control"
+                        value={item.habitacion}
+                        onChange={e => updateItem(idx, 'habitacion', e.target.value.replace(/\D/g, ''))}
+                        placeholder="Nro"
+                        style={{ width: 70 }}
                       />
                     </td>
                     <td>
                       <input
                         type="text"
                         className="form-control"
-                        value={item.habitacion}
-                        onChange={e => updateItem(idx, 'habitacion', e.target.value)}
-                        placeholder="Ej: 101"
+                        value={item.otro_sector}
+                        onChange={e => updateItem(idx, 'otro_sector', e.target.value)}
+                        placeholder="Sector..."
+                        style={{ width: 110 }}
                       />
                     </td>
                     <td>
