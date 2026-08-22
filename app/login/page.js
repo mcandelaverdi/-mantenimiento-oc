@@ -57,4 +57,18 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPass(v => !v)}
+ top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:'1rem' }}
+              >
+                {showPass ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ width:'100%', justifyContent:'center' }} disabled={loading}>
+            {loading ? 'Ingresando...' : 'Ingresar'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
                 style={{ position:'absolute', right:8,
