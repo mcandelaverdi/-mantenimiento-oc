@@ -1,217 +1,133 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const HOTELES = ['VALLES', 'PRINCE', 'AMERICA', 'VIPS', 'KING'];
-const PRODUCTOS_SUGERIDOS = [
-  'Pintura latex', 'Pincel', 'Rodillo', 'Lija', 'Masilla',
-  'Ceramica', 'Adhesivo ceramico', 'Pastina', 'Sellador',
-  'Cano PVC', 'Codo PVC', 'Llave de paso', 'Sifon',
-  'Cable electrico', 'Llave termica', 'Tomacorriente', 'Interruptor',
-  'Foco LED', 'Lampara', 'Flexo', 'Cerradura', 'Bisagra',
-  'Silicona', 'Espuma expansiva', 'Cinta aisladora',
-];
+const ESTADOS = ['PENDIENTE', 'APROBADA', 'PAGADA', 'APROBADA SIN FACTURA', 'RECHAZADA POR FALTA DE PRODUCTO'];
+const STORAGE_KEY = 'ordenes_filtros';
 
-const emptyItem = () => ({ producto_nombre: '', cantidad: '', habitacion: '', otro_sector: '', motivo: '' });
+function estadoBadge(estado) {
+  const cls = {
+    PENDIENTE: 'badge-pendiente',
+    APROBADA: 'badge-aprobada',
+    PAGADA: 'badge-pagada',
+    'APROBADA SIN FACTURA': 'badge-sin-factura',
+    'RECHAZADA POR FALTA DE PRODUCTO': 'badge-rechazada'
+  };
+  return <span className={`badge ${cls[estado] || ''}`}>{estado}</span>;
+}
 
-export default function NuevaOrdenPage() {
+const filtrosInicio = () => {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return { hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' };
+};
+
+export default function OrdenesPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [hotel, setHotel] = useState(user?.hotel || '');
-  const [proveedor, setProveedor] = useState('');
-  const [firmaEncargado, setFirmaEncargado] = useState(user?.nombre || '');
-  const [items, setItems] = useState([emptyItem()]);
-  const [proveedores, setProveedores] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [ordenes, setOrdenes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState(filtrosInicio);
+  const [opciones, setOpciones] = useState({ proveedores: [], productos: [], habitaciones: [] });
 
   useEffect(() => {
-    fetch('/api/proveedores')
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setProveedores(data); })
-      .catch(() => {});
+    fetch('/api/ordenes/opciones').then(r => r.json()).then(data => {
+      if (data && !data.error) setOpciones(data);
+    });
   }, []);
 
-  if (user?.rol !== 'encargado') {
-    return <div className="container"><div className="alert alert-error">Sin permiso</div></div>;
-  }
-
-  const updateItem = (idx, field, value) => {
-    setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
-  };
-
-  const addItem = () => {
-    if (items.length < 12) setItems(prev => [...prev, emptyItem()]);
-  };
-
-  const removeItem = (idx) => {
-    if (items.length > 1) setItems(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    const validItems = items.filter(it => it.producto_nombre.trim()).map(it => ({
-      ...it,
-      habitacion: it.habitacion + (it.otro_sector ? ' / ' + it.otro_sector : '')
-    }));
-    if (!validItems.length) { setError('Debe ingresar al menos un producto'); return; }
+  useEffect(() => {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters)); } catch (e) {}
+  }, [filters]);
+    const fetchOrdenes = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await fetch('/api/ordenes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hotel, proveedor, firma_encargado: firmaEncargado, items: validItems }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al crear orden');
-      router.push('/ordenes');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    const params = new URLSearchParams();
+    if (filters.hotel) params.set('hotel', filters.hotel);
+    if (filters.proveedor) params.set('proveedor', filters.proveedor);
+    if (filters.estado) params.set('estado', filters.estado);
+    if (filters.habitacion) params.set('habitacion', filters.habitacion);
+    if (filters.producto) params.set('producto', filters.producto);
+    const res = await fetch(`/api/ordenes?${params}`);
+    const data = await res.json();
+    setOrdenes(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [filters.hotel, filters.proveedor, filters.estado, filters.habitacion, filters.producto]);
+
+  useEffect(() => { fetchOrdenes(); }, [fetchOrdenes]);
+
+  const handleDelete = async (id) => {
+    if (!confirm('Eliminar esta orden?')) return;
+    await fetch(`/api/ordenes/${id}`, { method: 'DELETE' });
+    fetchOrdenes();
   };
 
-  return (
+  const stats = {
+    total: ordenes.length,
+    pendiente: ordenes.filter(o => o.estado === 'PENDIENTE').length,
+    aprobada: ordenes.filter(o => o.estado === 'APROBADA').length,
+    pagada: ordenes.filter(o => o.estado === 'PAGADA').length,
+    sinFactura: ordenes.filter(o => o.estado === 'APROBADA SIN FACTURA').length,
+    rechazada: ordenes.filter(o => o.estado === 'RECHAZADA POR FALTA DE PRODUCTO').length,
+  };
+
+  const limpiarFiltros = () => setFilters({ hotel: '', proveedor: '', estado: '', producto: '', habitacion: '' });
+  const hayFiltros = Object.values(filters).some(v => v !== '');
+    return (
     <div className="container">
       <div className="page-header">
-        <h1>Nueva Orden de Compra</h1>
-        <button className="btn btn-secondary" onClick={() => router.push('/ordenes')}>Volver</button>
+        <h1>Ordenes de Compra</h1>
+        {user?.rol === 'encargado' && (
+          <Link href="/ordenes/nueva" className="btn btn-primary">+ Nueva Orden</Link>
+        )}
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      <div className="stats-grid">
+        <div className="stat-card stat-total"><div className="stat-number">{stats.total}</div><div className="stat-label">Total</div></div>
+        <div className="stat-card stat-pendiente"><div className="stat-number">{stats.pendiente}</div><div className="stat-label">Pendientes</div></div>
+        <div className="stat-card stat-aprobada"><div className="stat-number">{stats.aprobada}</div><div className="stat-label">Aprobadas</div></div>
+        <div className="stat-card stat-pagada"><div className="stat-number">{stats.pagada}</div><div className="stat-label">Pagadas</div></div>
+        <div className="stat-card stat-sin-factura"><div className="stat-number">{stats.sinFactura}</div><div className="stat-label">Sin Factura</div></div>
+        <div className="stat-card stat-rechazada"><div className="stat-number">{stats.rechazada}</div><div className="stat-label">Rechazadas</div></div>
+      </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="card">
-          <h2>Datos Generales</h2>
-          <div className="input-row">
-            <div className="form-group">
-              <label className="form-label">Hotel *</label>
-              <select className="form-control" value={hotel} onChange={e => setHotel(e.target.value)} required>
-                <option value="">Seleccionar...</option>
-                {HOTELES.map(h => <option key={h}>{h}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Proveedor *</label>
-              <select className="form-control" value={proveedor} onChange={e => setProveedor(e.target.value)} required>
-                <option value="">Seleccionar...</option>
-                {proveedores.map(p => <option key={p.id} value={p.nombre}>{p.nombre}</option>)}
-              </select>
-            </div>
-          </div>
+      <div className="card">
+        <div className="filters-bar no-print">
           <div className="form-group">
-            <label className="form-label">Firma Encargado</label>
-            <input
-              type="text"
-              className="form-control"
-              value={firmaEncargado}
-              onChange={e => setFirmaEncargado(e.target.value)}
-              placeholder="Nombre completo"
-              style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif', fontSize: '1rem' }}
-            />
-          </div>
-        </div>
+            <label className="form-label">Hotel</label>
+          {hayFiltros && <p style={{ fontSize: 13, color: '#777', marginBottom: 12 }}>Mostrando <strong>{ordenes.length}</strong> ordenes</p>}
 
-        <div className="card">
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-            <h2>Productos ({items.length}/12)</h2>
-            {items.length < 12 && (
-              <button type="button" className="btn btn-outline btn-sm" onClick={addItem}>+ Agregar fila</button>
-            )}
-          </div>
+        {loading ? (
+          <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>Cargando...</p>
+        ) : ordenes.length === 0 ? (
+          <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>No hay ordenes</p>
+        ) : (
           <div className="table-wrapper">
-            <table className="items-table">
+            <table>
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Producto *</th>
-                  <th>Cantidad</th>
-                  <th>Habitacion</th>
-                  <th>Otro Sector</th>
-                  <th>Motivo</th>
-                  <th></th>
+                  <th>Hotel</th>
+                  <th>Proveedor</th>
+                  <th>Encargado</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, idx) => (
-                  <tr key={idx}>
-                    <td>{idx + 1}</td>
+                {ordenes.map(o => (
+                  <tr key={o.id}>
+                    <td>{o.id}</td>
+                    <td>{o.hotel}</td>
+                    <td>{o.proveedor}</td>
+                    <td>{o.encargado_nombre || '-'}</td>
+                    <td>{estadoBadge(o.estado)}</td>
+                    <td>{new Date(o.created_at).toLocaleDateString('es-AR')}</td>
                     <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        list={`prod-list-${idx}`}
-                        value={item.producto_nombre}
-                        onChange={e => updateItem(idx, 'producto_nombre', e.target.value)}
-                        placeholder="Escribir o elegir..."
-                      />
-                      <datalist id={`prod-list-${idx}`}>
-                        {PRODUCTOS_SUGERIDOS.map(p => <option key={p} value={p} />)}
-                      </datalist>
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className="form-control"
-                        value={item.cantidad}
-                        onChange={e => updateItem(idx, 'cantidad', e.target.value.replace(/\D/g, ''))}
-                        placeholder="0"
-                        style={{ width: 70 }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className="form-control"
-                        value={item.habitacion}
-                        onChange={e => updateItem(idx, 'habitacion', e.target.value.replace(/\D/g, ''))}
-                        placeholder="Nro"
-                        style={{ width: 70 }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={item.otro_sector}
-                        onChange={e => updateItem(idx, 'otro_sector', e.target.value.replace(/[0-9]/g, ''))}
-                        placeholder="Sector..."
-                        style={{ width: 110 }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={item.motivo}
-                        onChange={e => updateItem(idx, 'motivo', e.target.value)}
-                        placeholder="Motivo..."
-                      />
-                    </td>
-                    <td>
-                      {items.length > 1 && (
-                        <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(idx)}>X</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div style={{ display:'flex', gap:12 }}>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar Orden'}
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => router.push('/ordenes')}>Cancelar</button>
-        </div>
-      </form>
-    </div>
-  );
-}
+                      <div className="actions-bar">
+                        <button className="btn btn-outline btn-sm" onClick={() => router.push(`/ordenes/${o.id}`)}>Ver</button>
