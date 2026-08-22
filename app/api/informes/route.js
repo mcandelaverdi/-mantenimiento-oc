@@ -5,7 +5,7 @@ import { getUser } from '@/lib/auth';
 export async function GET(request) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  if (user.usuario !== 'gisela') return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
+  if (user.rol !== 'gerente') return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const hotel = searchParams.get('hotel');
