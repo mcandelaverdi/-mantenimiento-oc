@@ -190,7 +190,7 @@ export default function NuevaOrdenPage() {
                         type="text"
                         className="form-control"
                         value={item.otro_sector}
-                        onChange={e => updateItem(idx, 'otro_sector', e.target.value)}
+                        onChange={e => updateItem(idx, 'otro_sector', e.target.value.replace(/[0-9]/g, ''))}
                         placeholder="Sector..."
                         style={{ width: 110 }}
                       />
