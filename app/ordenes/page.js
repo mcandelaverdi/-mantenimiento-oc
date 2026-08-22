@@ -57,3 +57,10 @@ export default function OrdenesPage() {
         {loading ? <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>Cargando...</p> : ordenes.length === 0 ? <p style={{ textAlign:'center', color:'#777', padding:'40px' }}>No hay ordenes</p> : (
           <div className="table-wrapper"><table><thead><tr><th>#</th><th>Hotel</th><th>Proveedor</th><th>Encargado</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>{ordenes.map(o => (<tr key={o.id}><td>{o.id}</td><td>{o.hotel}</td><td>{o.proveedor}</td><td>{o.encargado_nombre || '-'}</td><td>{estadoBadge(o.estado)}</td><td>{new Date(o.created_at).toLocaleDateString('es-AR')}</td><td><div className="actions-bar"><button className="btn btn-outline btn-sm" onClick={() => router.push(`/ordenes/${o.id}`)}>Ver</button>{user?.rol === 'gerente' &&
+                               <button className="btn btn-danger btn-sm no-print" onClick={() => handleDelete(o.id)}>Eliminar</button>}</div></td></tr>))}</tbody>
+          </table></div>
+        )}
+      </div>
+    </div>
+  );
+}
