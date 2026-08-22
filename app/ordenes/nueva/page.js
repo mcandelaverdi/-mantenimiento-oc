@@ -151,3 +151,33 @@ export default function NuevaOrdenPage() {
                         placeholder="Escribir o elegir..."
                       />
                       <datalist id={`prod-list-${idx}`}>
+                        {PRODUCTOS_SUGERIDOS.map(p => <option key={p} value={p} />)}
+                      </datalist>
+                    </td>
+                    <td>
+                      <input type="text" inputMode="numeric" className="form-control" value={item.cantidad} onChange={e => updateItem(idx, 'cantidad', e.target.value.replace(/\D/g, ''))} placeholder="0" style={{ width: 70 }} />
+                    </td>
+                    <td>
+                      <input type="text" inputMode="numeric" className="form-control" value={item.habitacion} onChange={e => updateItem(idx, 'habitacion', e.target.value.replace(/\D/g, ''))} placeholder="Nro" style={{ width: 70 }} />
+                    </td>
+                    <td>
+                      <input type="text" className="form-control" value={item.otro_sector} onChange={e => updateItem(idx, 'otro_sector', e.target.value.replace(/[0-9]/g, ''))} placeholder="Sector..." style={{ width: 110 }} />
+                    </td>
+                    <td>
+                      <input type="text" className="form-control" value={item.motivo} onChange={e => updateItem(idx, 'motivo', e.target.value)} placeholder="Motivo..." />
+                    </td>
+                    <td>{items.length > 1 && <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(idx)}>X</button>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Guardando...' : 'Guardar Orden'}</button>
+          <button type="button" className="btn btn-secondary" onClick={() => router.push('/ordenes')}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
+}
