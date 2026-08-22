@@ -10,7 +10,6 @@ export default function Navbar() {
       <span className="navbar-brand">🏨 Órdenes de Compra</span>
       <div className="navbar-links">
         <Link href="/ordenes">Órdenes</Link>
-        {user.rol === 'encargado' && <Link href="/ordenes/nueva">Nueva Orden</Link>}
         {user.rol === 'gerente' && <Link href="/usuarios">Usuarios</Link>}
         {user.rol === 'gerente' && <Link href="/proveedores">Proveedores</Link>}
         <span className="navbar-user">{user.nombre} ({user.rol})</span>
