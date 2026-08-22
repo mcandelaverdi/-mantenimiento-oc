@@ -24,4 +24,4 @@ export default function NuevaOrdenPage() {
   const [items, setItems] = useState([emptyItem()]);
   const [proveedores, setProveedores] = useState([]);
   const [error, setError] = useState('');
-  const [loading, setLoading] =
+  const [loading, setLoading] = useState(false);
