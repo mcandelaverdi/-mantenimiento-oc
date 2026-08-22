@@ -32,6 +32,21 @@ export default function OrdenesPage() {
   const router = useRouter();
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
+                          {user?.rol === 'gerente' && (
+                          <button className="btn btn-danger btn-sm no-print" onClick={() => handleDelete(o.id)}>Eliminar</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
   const [filters, setFilters] = useState(filtrosInicio);
   const [opciones, setOpciones] = useState({ proveedores: [], productos: [], habitaciones: [] });
 
