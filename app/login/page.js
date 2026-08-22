@@ -8,7 +8,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,36 +31,11 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Usuario</label>
-            <input
-              type="text"
-              className="form-control"
-              value={usuario}
-              onChange={e => setUsuario(e.target.value)}
-              required
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect="off"
-            />
+            <input type="text" className="form-control" value={usuario} onChange={e => setUsuario(e.target.value)} required autoFocus autoCapitalize="none" autoCorrect="off" />
           </div>
           <div className="form-group">
             <label className="form-label">Contrasena</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPass ? 'text' : 'password'}
-                className="form-control"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                style={{ paddingRight: 40 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(v => !v)}
- top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:'1rem' }}
-              >
-                {showPass ? '🙈' : '👁️'}
-              </button>
-            </div>
+            <input type="password" className="form-control" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
           <button type="submit" className="btn btn-primary" style={{ width:'100%', justifyContent:'center' }} disabled={loading}>
             {loading ? 'Ingresando...' : 'Ingresar'}
@@ -71,4 +45,3 @@ export default function LoginPage() {
     </div>
   );
 }
-                style={{ position:'absolute', right:8,
