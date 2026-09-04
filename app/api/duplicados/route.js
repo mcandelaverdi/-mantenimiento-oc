@@ -19,6 +19,7 @@ export async function GET() {
       oi.habitacion != '' 
       AND oi.habitacion IS NOT NULL
       AND o.created_at >= NOW() - INTERVAL '3 months'
+      AND o.estado != 'RECHAZADA POR FALTA DE PRODUCTO'
     GROUP BY oi.habitacion, oi.producto_nombre, o.hotel
     HAVING COUNT(DISTINCT o.id) > 1
     ORDER BY total_ordenes DESC, oi.habitacion ASC
