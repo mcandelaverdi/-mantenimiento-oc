@@ -25,12 +25,11 @@ export default function NuevaOrdenPage() {
   const [proveedores, setProveedores] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-    useEffect(() => {
+
+  useEffect(() => {
     fetch('/api/proveedores')
       .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setProveedores(data);
-      })
+      .then(data => { if (Array.isArray(data)) setProveedores(data); })
       .catch(() => {});
   }, []);
 
@@ -57,10 +56,7 @@ export default function NuevaOrdenPage() {
       ...it,
       habitacion: it.habitacion + (it.otro_sector ? ' / ' + it.otro_sector : '')
     }));
-    if (!validItems.length) {
-      setError('Debe ingresar al menos un producto');
-      return;
-    }
+    if (!validItems.length) { setError('Debe ingresar al menos un producto'); return; }
     setLoading(true);
     try {
       const res = await fetch('/api/ordenes', {
@@ -92,10 +88,14 @@ export default function NuevaOrdenPage() {
           <div className="input-row">
             <div className="form-group">
               <label className="form-label">Hotel</label>
-              <select className="form-control" value={hotel} onChange={e => setHotel(e.target.value)} required>
-                <option value="">Seleccionar...</option>
-                {HOTELES.map(h => <option key={h}>{h}</option>)}
-              </select>
+              {user?.hotel ? (
+                <div className="form-control" style={{ background:'#f5f6fa', fontWeight:600 }}>{user.hotel}</div>
+              ) : (
+                <select className="form-control" value={hotel} onChange={e => setHotel(e.target.value)} required>
+                  <option value="">Seleccionar...</option>
+                  {HOTELES.map(h => <option key={h}>{h}</option>)}
+                </select>
+              )}
             </div>
             <div className="form-group">
               <label className="form-label">Proveedor</label>
@@ -107,65 +107,32 @@ export default function NuevaOrdenPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Firma Encargado</label>
-            <input
-              type="text"
-              className="form-control"
-              value={firmaEncargado}
-              onChange={e => setFirmaEncargado(e.target.value)}
-              placeholder="Nombre completo"
-              style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif', fontSize: '1rem' }}
-            />
+            <input type="text" className="form-control" value={firmaEncargado} onChange={e => setFirmaEncargado(e.target.value)} placeholder="Nombre completo" style={{ fontStyle:'italic', fontFamily:'Georgia, serif', fontSize:'1rem' }} />
           </div>
         </div>
-               <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+
+        <div className="card">
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
             <h2>Productos ({items.length}/12)</h2>
-            {items.length < 12 && (
-              <button type="button" className="btn btn-outline btn-sm" onClick={addItem}>+ Agregar fila</button>
-            )}
+            {items.length < 12 && <button type="button" className="btn btn-outline btn-sm" onClick={addItem}>+ Agregar fila</button>}
           </div>
           <div className="table-wrapper">
             <table className="items-table">
               <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Producto</th>
-                  <th>Cantidad</th>
-                  <th>Habitacion</th>
-                  <th>Otro Sector</th>
-                  <th>Motivo</th>
-                  <th></th>
-                </tr>
+                <tr><th>#</th><th>Producto</th><th>Cantidad</th><th>Habitacion</th><th>Otro Sector</th><th>Motivo</th><th></th></tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
                   <tr key={idx}>
                     <td>{idx + 1}</td>
                     <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        list={`prod-list-${idx}`}
-                        value={item.producto_nombre}
-                        onChange={e => updateItem(idx, 'producto_nombre', e.target.value)}
-                        placeholder="Escribir o elegir..."
-                      />
-                      <datalist id={`prod-list-${idx}`}>
-                        {PRODUCTOS_SUGERIDOS.map(p => <option key={p} value={p} />)}
-                      </datalist>
+                      <input type="text" className="form-control" list={`prod-list-${idx}`} value={item.producto_nombre} onChange={e => updateItem(idx, 'producto_nombre', e.target.value)} placeholder="Escribir o elegir..." />
+                      <datalist id={`prod-list-${idx}`}>{PRODUCTOS_SUGERIDOS.map(p => <option key={p} value={p} />)}</datalist>
                     </td>
-                    <td>
-                      <input type="text" inputMode="numeric" className="form-control" value={item.cantidad} onChange={e => updateItem(idx, 'cantidad', e.target.value.replace(/\D/g, ''))} placeholder="0" style={{ width: 70 }} />
-                    </td>
-                    <td>
-                      <input type="text" inputMode="numeric" className="form-control" value={item.habitacion} onChange={e => updateItem(idx, 'habitacion', e.target.value.replace(/\D/g, ''))} placeholder="Nro" style={{ width: 70 }} />
-                    </td>
-                    <td>
-                      <input type="text" className="form-control" value={item.otro_sector} onChange={e => updateItem(idx, 'otro_sector', e.target.value.replace(/[0-9]/g, ''))} placeholder="Sector..." style={{ width: 110 }} />
-                    </td>
-                    <td>
-                      <input type="text" className="form-control" value={item.motivo} onChange={e => updateItem(idx, 'motivo', e.target.value)} placeholder="Motivo..." />
-                    </td>
+                    <td><input type="text" inputMode="numeric" className="form-control" value={item.cantidad} onChange={e => updateItem(idx, 'cantidad', e.target.value.replace(/\D/g, ''))} placeholder="0" style={{ width:70 }} /></td>
+                    <td><input type="text" inputMode="numeric" className="form-control" value={item.habitacion} onChange={e => updateItem(idx, 'habitacion', e.target.value.replace(/\D/g, ''))} placeholder="Nro" style={{ width:70 }} /></td>
+                    <td><input type="text" className="form-control" value={item.otro_sector} onChange={e => updateItem(idx, 'otro_sector', e.target.value.replace(/[0-9]/g, ''))} placeholder="Sector..." style={{ width:110 }} /></td>
+                    <td><input type="text" className="form-control" value={item.motivo} onChange={e => updateItem(idx, 'motivo', e.target.value)} placeholder="Motivo..." /></td>
                     <td>{items.length > 1 && <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(idx)}>X</button>}</td>
                   </tr>
                 ))}
@@ -173,7 +140,8 @@ export default function NuevaOrdenPage() {
             </table>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+
+        <div style={{ display:'flex', gap:12 }}>
           <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Guardando...' : 'Guardar Orden'}</button>
           <button type="button" className="btn btn-secondary" onClick={() => router.push('/ordenes')}>Cancelar</button>
         </div>
